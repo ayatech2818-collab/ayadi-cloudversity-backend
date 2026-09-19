@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 
+
 from app.core.config import settings
-from app.core.database import test_db_connection
+from app.auth.routes.auth import router as auth_router
 
 
 app = FastAPI(
@@ -10,13 +11,15 @@ app = FastAPI(
 )
 
 
-@app.on_event("startup")
-def startup():
-    test_db_connection()
+app.include_router(
+    auth_router,
+    prefix="/api/v1/auth",
+    tags=["Authentication"],
+)
 
 
 @app.get("/")
 def root():
     return {
-        "message": "Ayadi Cloudversity API is running"
+        "message": "Ayadi Cloudversity API is running fine"
     }

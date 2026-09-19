@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.config import settings
@@ -24,15 +24,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-def test_db_connection():
-    try:
-        with engine.connect() as connection:
-            result = connection.execute(text("SELECT 1"))
-            print("✅ Database connected successfully!")
-            print(f"Test result: {result.scalar()}")
-
-    except Exception as e:
-        print("❌ Database connection failed!")
-        print(f"Error: {e}")
