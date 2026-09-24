@@ -13,6 +13,7 @@ class BlogCreate(BaseModel):
     content: str
 
     cover_image: str | None = None
+    cover_image_key: str | None = Field(default=None, max_length=500)
     cover_image_alt: str | None = Field(default=None, max_length=255)
 
     category: str | None = Field(default=None, max_length=100)
@@ -38,6 +39,7 @@ class BlogUpdate(BaseModel):
     content: str | None = None
 
     cover_image: str | None = None
+    cover_image_key: str | None = Field(default=None, max_length=500)
     cover_image_alt: str | None = Field(default=None, max_length=255)
 
     category: str | None = Field(default=None, max_length=100)

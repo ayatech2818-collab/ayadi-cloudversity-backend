@@ -9,6 +9,7 @@ class AuthorCreate(BaseModel):
     designation: str | None = Field(default=None, max_length=255)
     bio: str | None = None
     profile_image: str | None = Field(default=None, max_length=500)
+    profile_image_key: str | None = Field(default=None, max_length=500)
     linkedin_url: str | None = Field(default=None, max_length=500)
 
 
@@ -17,6 +18,7 @@ class AuthorUpdate(BaseModel):
     designation: str | None = Field(default=None, max_length=255)
     bio: str | None = None
     profile_image: str | None = Field(default=None, max_length=500)
+    profile_image_key: str | None = Field(default=None, max_length=500)
     linkedin_url: str | None = Field(default=None, max_length=500)
     is_active: bool | None = None
 

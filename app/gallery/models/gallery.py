@@ -1,15 +1,15 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 
 
-class BlogAuthor(Base):
-    __tablename__ = "blog_authors"
+class Gallery(Base):
+    __tablename__ = "galleries"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -17,40 +17,38 @@ class BlogAuthor(Base):
         default=uuid.uuid4,
     )
 
-    name: Mapped[str] = mapped_column(
+    title: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
     )
 
-    designation: Mapped[str | None] = mapped_column(
+    slug: Mapped[str] = mapped_column(
         String(255),
-        nullable=True,
+        unique=True,
+        nullable=False,
+        index=True,
     )
 
-    bio: Mapped[str | None] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
-    profile_image: Mapped[str | None] = mapped_column(
-        String(500),
+    event_date: Mapped[date | None] = mapped_column(
+        Date,
         nullable=True,
     )
 
-    profile_image_key: Mapped[str | None] = mapped_column(
-        String(500),
-        nullable=True,
-    )
-
-    linkedin_url: Mapped[str | None] = mapped_column(
-        String(500),
-        nullable=True,
-    )
-
-    is_active: Mapped[bool] = mapped_column(
+    is_published: Mapped[bool] = mapped_column(
         Boolean,
-        default=True,
+        default=False,
         nullable=False,
+    )
+
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_profiles.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
