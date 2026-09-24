@@ -6,6 +6,9 @@ from app.core.config import settings
 from app.auth.routes.auth import router as auth_router
 from app.blog.routes.blog import router as blog_router
 from app.blog.routes.author import router as author_router
+from app.core.routes.upload import router as upload_router
+from app.gallery.routes.gallery import router as gallery_router
+from app.gallery.routes.gallery_item import router as gallery_item_router
 
 
 
@@ -40,6 +43,21 @@ app.include_router(
 )
 app.include_router(
     author_router,
+    prefix="/api/v1",
+)
+app.include_router(
+    upload_router,
+    prefix="/api/v1",
+)
+
+
+app.include_router(
+    gallery_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    gallery_item_router,
     prefix="/api/v1",
 )
 

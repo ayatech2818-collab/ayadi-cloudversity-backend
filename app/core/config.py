@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_SECRET_KEY: str
 
+    AWS_REGION: str
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+    AWS_S3_BUCKET: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -50,6 +50,11 @@ class Blog(Base):
         nullable=True,
     )
 
+    cover_image_key: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
     cover_image_alt: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,

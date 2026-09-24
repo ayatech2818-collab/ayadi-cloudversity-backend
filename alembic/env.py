@@ -10,6 +10,8 @@ from app.core.database import Base
 from app.auth.models.admin_profile import AdminProfile
 from app.blog.models.blog import Blog
 from app.blog.models.author import BlogAuthor
+from app.gallery.models.gallery import Gallery
+from app.gallery.models.gallery_item import GalleryItem
 
 
 config = context.config
