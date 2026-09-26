@@ -4,13 +4,43 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from fastapi import HTTPException, UploadFile
+from app.core.storage import delete_file, upload_image
+
 from app.blog.models.author import BlogAuthor
 from app.blog.schemas.author import AuthorCreate, AuthorUpdate
 from app.core.storage import delete_file
 
 
-def create_author(db: Session, data: AuthorCreate) -> BlogAuthor:
-    author = BlogAuthor(**data.model_dump())
+def create_author(
+    db: Session,
+    name: str,
+    designation: str | None,
+    bio: str | None,
+    linkedin_url: str | None,
+    profile_image: UploadFile | None,
+) -> BlogAuthor:
+
+    image_url = None
+    image_key = None
+
+    if profile_image:
+        uploaded = upload_image(
+            profile_image,
+            folder="authors",
+        )
+
+        image_url = uploaded["url"]
+        image_key = uploaded["key"]
+
+    author = BlogAuthor(
+        name=name,
+        designation=designation,
+        bio=bio,
+        linkedin_url=linkedin_url,
+        profile_image=image_url,
+        profile_image_key=image_key,
+    )
 
     db.add(author)
     db.commit()
@@ -44,25 +74,44 @@ def get_author(db: Session, author_id: UUID) -> BlogAuthor:
 def update_author(
     db: Session,
     author_id: UUID,
-    data: AuthorUpdate,
+    name: str | None,
+    designation: str | None,
+    bio: str | None,
+    linkedin_url: str | None,
+    profile_image: UploadFile | None,
 ) -> BlogAuthor:
-    author = get_author(db, author_id)
 
-    update_data = data.model_dump(exclude_unset=True)
+    author = get_author(db, author_id)
 
     old_profile_image_key = author.profile_image_key
 
-    for field, value in update_data.items():
-        setattr(author, field, value)
+    if name is not None:
+        author.name = name
+
+    if designation is not None:
+        author.designation = designation
+
+    if bio is not None:
+        author.bio = bio
+
+    if linkedin_url is not None:
+        author.linkedin_url = linkedin_url
+
+    if profile_image:
+        uploaded = upload_image(
+            profile_image,
+            folder="authors",
+        )
+
+        author.profile_image = uploaded["url"]
+        author.profile_image_key = uploaded["key"]
 
     db.commit()
     db.refresh(author)
 
-    new_profile_image_key = author.profile_image_key
-
     if (
-    old_profile_image_key
-    and old_profile_image_key != new_profile_image_key
+        old_profile_image_key
+        and old_profile_image_key != author.profile_image_key
     ):
         delete_file(old_profile_image_key)
 
@@ -89,3 +138,14 @@ def restore_author(
     db.refresh(author)
 
     return author
+
+def get_deleted_authors(
+    db: Session,
+) -> list[BlogAuthor]:
+    result = db.scalars(
+        select(BlogAuthor)
+        .where(BlogAuthor.is_active.is_(False))
+        .order_by(BlogAuthor.name.asc())
+    )
+
+    return list(result.all())

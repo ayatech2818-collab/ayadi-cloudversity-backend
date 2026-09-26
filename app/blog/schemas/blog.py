@@ -68,6 +68,7 @@ class BlogResponse(BaseModel):
     content: str
 
     cover_image: str | None
+    cover_image_key: str | None
     cover_image_alt: str | None
 
     category: str | None
