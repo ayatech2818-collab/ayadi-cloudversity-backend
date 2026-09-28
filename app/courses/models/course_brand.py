@@ -1,20 +1,21 @@
 import uuid
-from datetime import date, datetime
+from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from typing import TYPE_CHECKING
-
 from app.core.database import Base
 
+
 if TYPE_CHECKING:
-    from app.gallery.models.gallery_item import GalleryItem
+    from app.courses.models.course_category import CourseCategory
+    from app.courses.models.course import Course
 
 
-class Gallery(Base):
-    __tablename__ = "galleries"
+class CourseBrand(Base):
+    __tablename__ = "course_brands"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -22,13 +23,13 @@ class Gallery(Base):
         default=uuid.uuid4,
     )
 
-    title: Mapped[str] = mapped_column(
-        String(255),
+    name: Mapped[str] = mapped_column(
+        String(150),
         nullable=False,
     )
 
     slug: Mapped[str] = mapped_column(
-        String(255),
+        String(150),
         unique=True,
         nullable=False,
         index=True,
@@ -39,21 +40,21 @@ class Gallery(Base):
         nullable=True,
     )
 
-    event_date: Mapped[date | None] = mapped_column(
-        Date,
+    logo: Mapped[str | None] = mapped_column(
+        String(500),
         nullable=True,
     )
 
-    is_published: Mapped[bool] = mapped_column(
+    is_active: Mapped[bool] = mapped_column(
         Boolean,
-        default=False,
+        default=True,
         nullable=False,
     )
 
-    created_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("admin_profiles.id", ondelete="SET NULL"),
-        nullable=True,
+    display_order: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -69,10 +70,13 @@ class Gallery(Base):
         nullable=False,
     )
 
-    items: Mapped[list["GalleryItem"]] = relationship(
-        "GalleryItem",
-        back_populates="gallery",
+    categories: Mapped[list["CourseCategory"]] = relationship(
+        "CourseCategory",
+        back_populates="brand",
         cascade="all, delete-orphan",
-        passive_deletes=True,
-        order_by="GalleryItem.display_order",
+    )
+
+    courses: Mapped[list["Course"]] = relationship(
+        "Course",
+        back_populates="brand",
     )

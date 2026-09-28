@@ -10,6 +10,8 @@ from app.core.routes.upload import router as upload_router
 from app.gallery.routes.gallery import router as gallery_router
 from app.gallery.routes.gallery_item import router as gallery_item_router
 
+from fastapi.openapi.utils import get_openapi
+
 
 
 
@@ -18,6 +20,48 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
 )
+
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    for component in schema.get("components", {}).get("schemas", {}).values():
+        properties = component.get("properties", {})
+
+        for prop in properties.values():
+
+            # Single file
+            if (
+                prop.get("type") == "string"
+                and prop.get("contentMediaType") == "application/octet-stream"
+            ):
+                prop.pop("contentMediaType", None)
+                prop["format"] = "binary"
+
+            # Multiple files
+            items = prop.get("items")
+
+            if (
+                prop.get("type") == "array"
+                and isinstance(items, dict)
+                and items.get("contentMediaType") == "application/octet-stream"
+            ):
+                items.pop("contentMediaType", None)
+                items["format"] = "binary"
+
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 app.add_middleware(
