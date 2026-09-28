@@ -4,10 +4,15 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from typing import TYPE_CHECKING
 
 from app.core.database import Base
 
+
+if TYPE_CHECKING:
+    from app.gallery.models.gallery import Gallery
 
 class GalleryMediaType(str, enum.Enum):
     IMAGE = "image"
@@ -82,4 +87,9 @@ class GalleryItem(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         nullable=False,
+    )
+
+    gallery: Mapped["Gallery"] = relationship(
+        "Gallery",
+        back_populates="items",
     )

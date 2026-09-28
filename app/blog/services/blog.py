@@ -1,17 +1,19 @@
 from uuid import UUID
 
-from fastapi import HTTPException, status
-from sqlalchemy import select
+from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
+
+from sqlalchemy import or_, select
 
 from app.blog.models.blog import Blog
 from app.blog.schemas.blog import BlogCreate, BlogUpdate
-from app.core.storage import delete_file
+from app.core.storage import delete_file, upload_image
 
 
 def create_blog(
     db: Session,
     data: BlogCreate,
+    cover_image: UploadFile | None,
     admin_id: UUID,
 ) -> Blog:
 
@@ -25,8 +27,25 @@ def create_blog(
             detail="A blog with this slug already exists.",
         )
 
+    image_url = None
+    image_key = None
+
+    if cover_image:
+        uploaded = upload_image(
+            cover_image,
+            folder="blogs",
+        )
+
+        image_url = uploaded["url"]
+        image_key = uploaded["key"]
+
+    blog_data = data.model_dump()
+
+    blog_data["cover_image"] = image_url
+    blog_data["cover_image_key"] = image_key
+
     blog = Blog(
-        **data.model_dump(),
+        **blog_data,
         created_by=admin_id,
     )
 
@@ -39,14 +58,59 @@ def create_blog(
 
 def get_blogs(
     db: Session,
+    search: str | None = None,
+    status_filter: str | None = None,
+    category: str | None = None,
+    sort_by: str = "newest",
 ) -> list[Blog]:
 
-    result = db.scalars(
-        select(Blog).order_by(Blog.created_at.desc())
-    )
+    query = select(Blog)
+
+    # Search
+    if search:
+        search_term = f"%{search.strip()}%"
+
+        query = query.where(
+            or_(
+                Blog.title.ilike(search_term),
+                Blog.excerpt.ilike(search_term),
+                Blog.category.ilike(search_term),
+            )
+        )
+
+    # Status
+    if status_filter:
+        query = query.where(
+            Blog.status == status_filter
+        )
+
+    # Category
+    if category:
+        query = query.where(
+            Blog.category == category
+        )
+
+    # Sorting
+    if sort_by == "oldest":
+        query = query.order_by(
+            Blog.created_at.asc()
+        )
+    elif sort_by == "title-asc":
+        query = query.order_by(
+            Blog.title.asc()
+        )
+    elif sort_by == "title-desc":
+        query = query.order_by(
+            Blog.title.desc()
+        )
+    else:
+        query = query.order_by(
+            Blog.created_at.desc()
+        )
+
+    result = db.scalars(query)
 
     return list(result.all())
-
 
 def get_blog(
     db: Session,
@@ -63,12 +127,13 @@ def get_blog(
 
     return blog
 
-
 def update_blog(
     db: Session,
     blog_id: UUID,
     data: BlogUpdate,
+    cover_image: UploadFile | None,
 ) -> Blog:
+
     blog = get_blog(db, blog_id)
 
     update_data = data.model_dump(exclude_unset=True)
@@ -93,6 +158,15 @@ def update_blog(
     for field, value in update_data.items():
         setattr(blog, field, value)
 
+    if cover_image:
+        uploaded = upload_image(
+            cover_image,
+            folder="blogs",
+        )
+
+        blog.cover_image = uploaded["url"]
+        blog.cover_image_key = uploaded["key"]
+
     db.commit()
     db.refresh(blog)
 
@@ -111,6 +185,7 @@ def delete_blog(
     db: Session,
     blog_id: UUID,
 ) -> None:
+
     blog = get_blog(db, blog_id)
 
     old_cover_image_key = blog.cover_image_key

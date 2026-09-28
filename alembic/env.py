@@ -13,6 +13,12 @@ from app.blog.models.author import BlogAuthor
 from app.gallery.models.gallery import Gallery
 from app.gallery.models.gallery_item import GalleryItem
 
+from app.courses.models import (
+    Course,
+    CourseBrand,
+    CourseCategory,
+    CourseSubcategory,
+)
 
 config = context.config
 

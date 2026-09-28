@@ -1,6 +1,8 @@
 from datetime import date, datetime
 from uuid import UUID
 
+from app.gallery.schemas.gallery_item import GalleryItemResponse
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -32,3 +34,7 @@ class GalleryResponse(BaseModel):
     created_by: UUID | None
     created_at: datetime
     updated_at: datetime
+
+    items: list[GalleryItemResponse] = Field(
+        default_factory=list
+    )
