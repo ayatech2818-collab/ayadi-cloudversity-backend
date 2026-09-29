@@ -40,7 +40,12 @@ class CourseBrand(Base):
         nullable=True,
     )
 
-    logo: Mapped[str | None] = mapped_column(
+    logo_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
+    logo_key: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
     )
