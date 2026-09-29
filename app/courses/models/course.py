@@ -34,14 +34,14 @@ class Course(Base):
     category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("course_categories.id"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 
     subcategory_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("course_subcategories.id"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 
@@ -79,6 +79,10 @@ class Course(Base):
         nullable=True,
     )
 
+    thumbnail_key: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
     duration: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
