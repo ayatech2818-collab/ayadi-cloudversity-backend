@@ -345,6 +345,8 @@ def get_courses(
     brand_id: UUID | None = Query(default=None),
     category_id: UUID | None = Query(default=None),
     subcategory_id: UUID | None = Query(default=None),
+    search: str | None = Query(default=None),
+    is_published: bool | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     return course_service.get_courses(
@@ -352,6 +354,8 @@ def get_courses(
         brand_id,
         category_id,
         subcategory_id,
+        search,
+        is_published,
     )
 
 

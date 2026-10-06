@@ -677,6 +677,8 @@ def get_courses(
     brand_id: UUID | None = None,
     category_id: UUID | None = None,
     subcategory_id: UUID | None = None,
+    search: str | None = None,
+    is_published: bool | None = None,
 ) -> list[Course]:
 
     query = select(Course)
@@ -694,6 +696,19 @@ def get_courses(
     if subcategory_id:
         query = query.where(
             Course.subcategory_id == subcategory_id
+        )
+
+    # Case-insensitive match on the course title, done by the database.
+    search_term = search.strip() if search else ""
+
+    if search_term:
+        query = query.where(
+            Course.title.ilike(f"%{search_term}%")
+        )
+
+    if is_published is not None:
+        query = query.where(
+            Course.is_published.is_(is_published)
         )
 
     query = query.order_by(
