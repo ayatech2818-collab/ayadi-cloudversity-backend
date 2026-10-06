@@ -10,6 +10,7 @@ from app.core.routes.upload import router as upload_router
 from app.gallery.routes.gallery import router as gallery_router
 from app.gallery.routes.gallery_item import router as gallery_item_router
 from app.courses.routes.course_routes import router as course_router
+from app.enquiries.routes.enquiry import router as enquiry_router
 
 from fastapi.openapi.utils import get_openapi
 
@@ -108,6 +109,10 @@ app.include_router(
 
 app.include_router(
     course_router,
+    prefix="/api/v1",
+)
+app.include_router(
+    enquiry_router,
     prefix="/api/v1",
 )
 

@@ -12,6 +12,7 @@ from app.blog.models.blog import Blog
 from app.blog.models.author import BlogAuthor
 from app.gallery.models.gallery import Gallery
 from app.gallery.models.gallery_item import GalleryItem
+from app.enquiries.models.enquiry import Enquiry
 
 from app.courses.models import (
     Course,
