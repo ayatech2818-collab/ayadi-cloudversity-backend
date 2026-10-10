@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from sqlalchemy import or_, select
 
-from app.blog.models.blog import Blog
+from app.blog.models.blog import Blog,BlogStatus
 from app.blog.schemas.blog import BlogCreate, BlogUpdate
 from app.core.storage import delete_file, upload_image
 
@@ -54,6 +54,8 @@ def create_blog(
     db.refresh(blog)
 
     return blog
+
+
 
 
 def get_blogs(
@@ -195,3 +197,22 @@ def delete_blog(
 
     if old_cover_image_key:
         delete_file(old_cover_image_key)
+
+def get_public_blog_by_slug(
+    db: Session,
+    slug: str,
+) -> Blog:
+    blog = db.scalar(
+        select(Blog).where(
+            Blog.slug == slug,
+            Blog.status == BlogStatus.PUBLISHED,
+        )
+    )
+
+    if not blog:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Blog not found.",
+        )
+
+    return blog

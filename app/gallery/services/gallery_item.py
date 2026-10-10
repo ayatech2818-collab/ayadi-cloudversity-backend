@@ -72,11 +72,12 @@ def get_gallery_items(
     db: Session,
     gallery_id: UUID,
     media_type: GalleryMediaType | None = None,
+    public_only: bool = False,
 ) -> list[GalleryItem]:
 
     gallery = db.get(Gallery, gallery_id)
 
-    if not gallery:
+    if not gallery or (public_only and not gallery.is_published):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Gallery not found.",
@@ -105,8 +106,18 @@ def get_gallery_item(
     db: Session,
     gallery_id: UUID,
     item_id: UUID,
+    public_only: bool = False,
 ) -> GalleryItem:
 
+
+    gallery = db.get(Gallery, gallery_id)
+
+    if not gallery or (public_only and not gallery.is_published):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Gallery not found.",
+        )
+        
     item = db.scalar(
         select(GalleryItem).where(
             GalleryItem.id == item_id,

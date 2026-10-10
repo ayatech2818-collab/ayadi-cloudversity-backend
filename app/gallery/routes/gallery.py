@@ -75,6 +75,47 @@ def list_galleries(
         event_date_to=event_date_to,
     )
 
+@router.get(
+    "/public",
+    response_model=list[GalleryResponse],
+)
+def list_galleries_public(
+    search: str | None = Query(
+        default=None,
+        description="Search by gallery title or slug",
+    ),
+    event_date_from: date | None = Query(
+        default=None,
+        description="Filter galleries from this date",
+    ),
+    event_date_to: date | None = Query(
+        default=None,
+        description="Filter galleries up to this date",
+    ),
+    db: Session = Depends(get_db),
+):
+    return get_galleries(
+        db=db,
+        search=search,
+        is_published=True,
+        event_date_from=event_date_from,
+        event_date_to=event_date_to,
+    )
+
+@router.get(
+    "/public/{gallery_id}",
+    response_model=GalleryResponse,
+)
+def get_public_gallery(
+    gallery_id: UUID,
+    db: Session = Depends(get_db),
+):
+    return get_gallery(
+        db=db,
+        gallery_id=gallery_id,
+        public_only=True,
+    )
+
 
 @router.get(
     "/{gallery_id}",
@@ -89,6 +130,7 @@ def get(
         db=db,
         gallery_id=gallery_id,
     )
+
 
 
 @router.patch(

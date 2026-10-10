@@ -33,14 +33,14 @@ class Course(Base):
 
     category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("course_categories.id"),
+        ForeignKey("course_categories.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
     subcategory_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("course_subcategories.id"),
+        ForeignKey("course_subcategories.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

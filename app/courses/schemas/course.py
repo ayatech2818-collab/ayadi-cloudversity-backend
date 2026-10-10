@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class CourseBase(BaseModel):
     brand_id: UUID
-    category_id: UUID
-    subcategory_id: UUID
+    category_id: UUID | None = None
+    subcategory_id: UUID | None = None
 
     title: str = Field(..., min_length=1, max_length=200)
     slug: str = Field(..., min_length=1, max_length=200)

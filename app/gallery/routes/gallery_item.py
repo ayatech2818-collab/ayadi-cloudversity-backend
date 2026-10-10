@@ -26,6 +26,41 @@ router = APIRouter(
 )
 
 
+@router.get(
+    "/public/{gallery_id}/items",
+    response_model=list[GalleryItemResponse],
+)
+def list_gallery_items_public(
+    gallery_id: UUID,
+    media_type: GalleryMediaType | None = Query(
+        default=None,
+        description="Filter by media type",
+    ),
+    db: Session = Depends(get_db),
+):
+    return get_gallery_items(
+        db=db,
+        gallery_id=gallery_id,
+        media_type=media_type,
+        public_only=True,
+    )
+
+@router.get(
+    "/public/{gallery_id}/items/{item_id}",
+    response_model=GalleryItemResponse,
+)
+def get_item_public(
+    gallery_id: UUID,
+    item_id: UUID,
+    db: Session = Depends(get_db),
+):
+    return get_gallery_item(
+        db=db,
+        gallery_id=gallery_id,
+        item_id=item_id,
+        public_only=True,
+    )
+
 @router.post(
     "/{gallery_id}/items",
     response_model=list[GalleryItemResponse],
