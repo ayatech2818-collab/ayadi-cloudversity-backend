@@ -108,10 +108,11 @@ def get_galleries(
 def get_gallery(
     db: Session,
     gallery_id: UUID,
+    public_only: bool = False,
 ) -> Gallery:
     gallery = db.get(Gallery, gallery_id)
 
-    if not gallery:
+    if not gallery or (public_only and not gallery.is_published):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Gallery not found.",

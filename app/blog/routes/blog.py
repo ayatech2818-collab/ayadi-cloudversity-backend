@@ -20,6 +20,7 @@ from app.blog.services.blog import (
     get_blog,
     get_blogs,
     update_blog,
+    get_public_blog_by_slug
 )
 from app.core.database import get_db
 
@@ -100,6 +101,7 @@ def list_blogs(
         "title-desc",
     ] = "newest",
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     return get_blogs(
         db=db,
@@ -109,6 +111,36 @@ def list_blogs(
         sort_by=sort_by,
     )
 
+@router.get("/public", response_model=list[BlogResponse])
+def list_public_blogs(
+    search: str | None = None,
+    category: str | None = None,
+    sort_by: Literal[
+        "newest",
+        "oldest",
+        "title-asc",
+        "title-desc",
+    ] = "newest",
+    db: Session = Depends(get_db),
+):
+    return get_blogs(
+        db=db,
+        search=search,
+        status_filter="published",
+        category=category,
+        sort_by=sort_by,
+    )
+
+
+@router.get("/public/{slug}", response_model=BlogResponse)
+def get_public_blog(
+    slug: str,
+    db: Session = Depends(get_db),
+):
+    return get_public_blog_by_slug(
+        db=db,
+        slug=slug,
+    )
 
 @router.get(
     "/{blog_id}",
