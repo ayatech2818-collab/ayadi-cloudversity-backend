@@ -369,6 +369,8 @@ def get_courses(
     subcategory_id: UUID | None = Query(default=None),
     search: str | None = Query(default=None),
     is_published: bool | None = Query(default=None),
+    limit: int | None = Query(default=None, ge=1, le=50),
+    random: bool = Query(default=False),
     db: Session = Depends(get_db),
 ):
     return course_service.get_courses(
@@ -378,6 +380,8 @@ def get_courses(
         subcategory_id,
         search,
         is_published,
+        limit,
+        random,
     )
 
 
