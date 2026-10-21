@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import HTTPException, status, UploadFile
-from sqlalchemy import select, exists
+from sqlalchemy import select, exists, func
 from sqlalchemy.orm import Session
 from app.core.storage import upload_image, delete_file
 
@@ -679,6 +679,8 @@ def get_courses(
     subcategory_id: UUID | None = None,
     search: str | None = None,
     is_published: bool | None = None,
+    limit: int | None = None,
+    random: bool = False,
 ) -> list[Course]:
 
     query = select(Course)
@@ -711,10 +713,17 @@ def get_courses(
             Course.is_published.is_(is_published)
         )
 
-    query = query.order_by(
-        Course.display_order,
-        Course.title,
-    )
+    # A random pick (e.g. featured courses), or the admin-set order.
+    if random:
+        query = query.order_by(func.random())
+    else:
+        query = query.order_by(
+            Course.display_order,
+            Course.title,
+        )
+
+    if limit:
+        query = query.limit(limit)
 
     return db.scalars(query).all()
 

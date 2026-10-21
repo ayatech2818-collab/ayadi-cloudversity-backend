@@ -1,9 +1,21 @@
+
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status, UploadFile, Form, File
+from fastapi import (
+    APIRouter,
+    Depends,
+    Query,
+    status,
+    UploadFile,
+    Form,
+    File,
+)
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.auth.dependencies import get_current_admin
+from app.auth.models.admin_profile import AdminProfile
+
 from app.courses.schemas.course import (
     CourseCreate,
     CourseResponse,
@@ -50,6 +62,7 @@ def create_brand(
     display_order: int = Form(0),
     logo: UploadFile | None = File(None),
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     data = CourseBrandCreate(
         name=name,
@@ -100,6 +113,7 @@ def update_brand(
     display_order: int | None = Form(None),
     logo: UploadFile | None = File(None),
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     update_data = {}
 
@@ -135,6 +149,7 @@ def update_brand(
 def delete_brand(
     brand_id: UUID,
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     course_service.delete_brand(db, brand_id)
 
@@ -151,6 +166,7 @@ def delete_brand(
 def create_category(
     data: CourseCategoryCreate,
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     return course_service.create_category(db, data)
 
@@ -191,6 +207,7 @@ def update_category(
     category_id: UUID,
     data: CourseCategoryUpdate,
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     return course_service.update_category(
         db,
@@ -206,6 +223,7 @@ def update_category(
 def delete_category(
     category_id: UUID,
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     course_service.delete_category(
         db,
@@ -225,6 +243,7 @@ def delete_category(
 def create_subcategory(
     data: CourseSubcategoryCreate,
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     return course_service.create_subcategory(
         db,
@@ -268,6 +287,7 @@ def update_subcategory(
     subcategory_id: UUID,
     data: CourseSubcategoryUpdate,
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     return course_service.update_subcategory(
         db,
@@ -283,6 +303,7 @@ def update_subcategory(
 def delete_subcategory(
     subcategory_id: UUID,
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     course_service.delete_subcategory(
         db,
@@ -314,6 +335,7 @@ def create_course(
     display_order: int = Form(0),
     thumbnail: UploadFile | None = File(None),
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     data = CourseCreate(
         brand_id=brand_id,
@@ -347,6 +369,8 @@ def get_courses(
     subcategory_id: UUID | None = Query(default=None),
     search: str | None = Query(default=None),
     is_published: bool | None = Query(default=None),
+    limit: int | None = Query(default=None, ge=1, le=50),
+    random: bool = Query(default=False),
     db: Session = Depends(get_db),
 ):
     return course_service.get_courses(
@@ -356,6 +380,8 @@ def get_courses(
         subcategory_id,
         search,
         is_published,
+        limit,
+        random,
     )
 
 
@@ -393,6 +419,7 @@ def update_course(
     display_order: int | None = Form(None),
     thumbnail: UploadFile | None = File(None),
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     update_data = {}
 
@@ -449,6 +476,7 @@ def update_course(
 def delete_course(
     course_id: UUID,
     db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
 ):
     course_service.delete_course(
         db,
