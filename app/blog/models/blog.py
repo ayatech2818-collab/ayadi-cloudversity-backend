@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
@@ -122,11 +122,17 @@ class Blog(Base):
         nullable=True,
     )
 
+    author = relationship(
+        "BlogAuthor",
+        lazy="selectin",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=datetime.utcnow,
         nullable=False,
     )
+
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

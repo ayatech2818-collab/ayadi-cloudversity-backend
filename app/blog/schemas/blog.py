@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.blog.models.blog import BlogStatus
 
+from app.blog.schemas.author import AuthorResponse
+
 
 class BlogCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
@@ -75,6 +77,7 @@ class BlogResponse(BaseModel):
     tags: list[str] | None
 
     author_id: uuid.UUID | None
+    author: AuthorResponse | None = None
     created_by: uuid.UUID | None
 
     status: BlogStatus
