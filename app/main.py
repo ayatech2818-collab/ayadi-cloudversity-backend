@@ -74,7 +74,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         "https://ayadi-cloudversity-frontend.vercel.app",
-        "https://ayadicloudversity.com/"
+        "https://ayadicloudversity.com/",
+        "https://www.ayadicloudversity.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
