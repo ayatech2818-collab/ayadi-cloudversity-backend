@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.courses.models.course_brand import CourseBrand
     from app.courses.models.course_category import CourseCategory
     from app.courses.models.course_subcategory import CourseSubcategory
+    from app.courses.models.course_mini_category import CourseMiniCategory
 
 
 class Course(Base):
@@ -41,6 +42,15 @@ class Course(Base):
     subcategory_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("course_subcategories.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    mini_category_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "course_mini_categories.id",
+            ondelete="SET NULL",
+        ),
         nullable=True,
         index=True,
     )
@@ -125,6 +135,11 @@ class Course(Base):
 
     category: Mapped["CourseCategory"] = relationship(
         "CourseCategory",
+        back_populates="courses",
+    )
+    
+    mini_category: Mapped["CourseMiniCategory | None"] = relationship(
+        "CourseMiniCategory",
         back_populates="courses",
     )
 

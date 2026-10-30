@@ -9,6 +9,8 @@ class CourseBase(BaseModel):
     category_id: UUID | None = None
     subcategory_id: UUID | None = None
 
+    mini_category_id: UUID | None = None
+
     title: str = Field(..., min_length=1, max_length=200)
     slug: str = Field(..., min_length=1, max_length=200)
     course_code: str = Field(..., min_length=1, max_length=50)
@@ -38,6 +40,8 @@ class CourseUpdate(BaseModel):
     brand_id: UUID | None = None
     category_id: UUID | None = None
     subcategory_id: UUID | None = None
+
+    mini_category_id: UUID | None = None
 
     title: str | None = Field(
         default=None,

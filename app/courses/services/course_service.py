@@ -23,6 +23,13 @@ from app.courses.schemas.course_subcategory import (
     CourseSubcategoryUpdate,
 )
 
+from app.courses.models.course_mini_category import CourseMiniCategory
+
+from app.courses.schemas.course_mini_category import (
+    CourseMiniCategoryCreate,
+    CourseMiniCategoryUpdate,
+)
+
 
 # =========================================================
 # Course Brand
@@ -499,18 +506,153 @@ def delete_subcategory(
     db.commit()
 
 
+
+
+# =========================================================
+# Course Mini Category
+# =========================================================
+
+def create_mini_category(
+    db: Session,
+    data: CourseMiniCategoryCreate,
+) -> CourseMiniCategory:
+    subcategory = get_subcategory(db, data.subcategory_id)
+
+    if not subcategory.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot add mini-category to an inactive subcategory",
+        )
+
+    existing = db.scalar(
+        select(CourseMiniCategory).where(
+            CourseMiniCategory.subcategory_id == data.subcategory_id,
+            CourseMiniCategory.slug == data.slug,
+        )
+    )
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mini-category slug already exists for this subcategory",
+        )
+
+    mini_category = CourseMiniCategory(**data.model_dump())
+
+    db.add(mini_category)
+    db.commit()
+    db.refresh(mini_category)
+
+    return mini_category
+
+
+def get_mini_categories(
+    db: Session,
+    subcategory_id: UUID | None = None,
+) -> list[CourseMiniCategory]:
+    query = select(CourseMiniCategory)
+
+    if subcategory_id is not None:
+        query = query.where(
+            CourseMiniCategory.subcategory_id == subcategory_id
+        )
+
+    query = query.order_by(
+        CourseMiniCategory.display_order,
+        CourseMiniCategory.name,
+    )
+
+    return db.scalars(query).all()
+
+
+def get_mini_category(
+    db: Session,
+    mini_category_id: UUID,
+) -> CourseMiniCategory:
+    mini_category = db.scalar(
+        select(CourseMiniCategory).where(
+            CourseMiniCategory.id == mini_category_id
+        )
+    )
+
+    if not mini_category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Mini-category not found",
+        )
+
+    return mini_category
+
+
+def update_mini_category(
+    db: Session,
+    mini_category_id: UUID,
+    data: CourseMiniCategoryUpdate,
+) -> CourseMiniCategory:
+    mini_category = get_mini_category(db, mini_category_id)
+
+    update_data = data.model_dump(exclude_unset=True)
+
+    subcategory_id = update_data.get(
+        "subcategory_id",
+        mini_category.subcategory_id,
+    )
+
+    subcategory = get_subcategory(db, subcategory_id)
+
+    if not subcategory.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot assign a mini-category to an inactive subcategory",
+        )
+
+    if "slug" in update_data:
+        existing = db.scalar(
+            select(CourseMiniCategory).where(
+                CourseMiniCategory.subcategory_id == subcategory_id,
+                CourseMiniCategory.slug == update_data["slug"],
+                CourseMiniCategory.id != mini_category_id,
+            )
+        )
+
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Mini-category slug already exists for this subcategory",
+            )
+
+    for key, value in update_data.items():
+        setattr(mini_category, key, value)
+
+    db.commit()
+    db.refresh(mini_category)
+
+    return mini_category
+
+
+def delete_mini_category(
+    db: Session,
+    mini_category_id: UUID,
+) -> None:
+    mini_category = get_mini_category(db, mini_category_id)
+
+    db.delete(mini_category)
+    db.commit()
+
+
+
 # =========================================================
 # Course
 # =========================================================
+
 
 def validate_course_hierarchy(
     db: Session,
     brand_id: UUID,
     category_id: UUID | None,
     subcategory_id: UUID | None,
+    mini_category_id: UUID | None = None,
 ) -> None:
-
-    # Check brand
     brand = get_brand(db, brand_id)
 
     if not brand.is_active:
@@ -519,7 +661,6 @@ def validate_course_hierarchy(
             detail="Brand is inactive",
         )
 
-    # Check whether this brand has any categories
     has_categories = db.scalar(
         select(
             exists().where(
@@ -529,25 +670,25 @@ def validate_course_hierarchy(
         )
     )
 
-    # ---------------------------------------------------------
-    # Brand has NO categories → direct course
-    # ---------------------------------------------------------
+    # Brands without categories cannot use subcategories
+    # or mini-categories.
     if not has_categories:
-
-        if category_id is not None or subcategory_id is not None:
+        if (
+            category_id is not None
+            or subcategory_id is not None
+            or mini_category_id is not None
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
                     "This brand does not have categories. "
-                    "Category and subcategory must be empty."
+                    "Category, subcategory, and mini-category "
+                    "must be empty."
                 ),
             )
 
         return
 
-    # ---------------------------------------------------------
-    # Brand HAS categories → category + subcategory required
-    # ---------------------------------------------------------
     if category_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -560,11 +701,7 @@ def validate_course_hierarchy(
             detail="Subcategory is required for this brand",
         )
 
-    # Check category
-    category = get_category(
-        db,
-        category_id,
-    )
+    category = get_category(db, category_id)
 
     if category.brand_id != brand_id:
         raise HTTPException(
@@ -578,11 +715,7 @@ def validate_course_hierarchy(
             detail="Category is inactive",
         )
 
-    # Check subcategory
-    subcategory = get_subcategory(
-        db,
-        subcategory_id,
-    )
+    subcategory = get_subcategory(db, subcategory_id)
 
     if subcategory.category_id != category_id:
         raise HTTPException(
@@ -594,6 +727,26 @@ def validate_course_hierarchy(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Subcategory is inactive",
+        )
+
+    # Mini-category is optional.
+    if mini_category_id is None:
+        return
+
+    mini_category = get_mini_category(db, mini_category_id)
+
+    if mini_category.subcategory_id != subcategory_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Mini-category does not belong to the selected subcategory"
+            ),
+        )
+
+    if not mini_category.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mini-category is inactive",
         )
 
 
@@ -608,6 +761,7 @@ def create_course(
         data.brand_id,
         data.category_id,
         data.subcategory_id,
+        data.mini_category_id,
     )
 
     # Check slug
@@ -677,6 +831,7 @@ def get_courses(
     brand_id: UUID | None = None,
     category_id: UUID | None = None,
     subcategory_id: UUID | None = None,
+    mini_category_id: UUID | None = None,
     search: str | None = None,
     is_published: bool | None = None,
     limit: int | None = None,
@@ -698,6 +853,11 @@ def get_courses(
     if subcategory_id:
         query = query.where(
             Course.subcategory_id == subcategory_id
+        )
+    
+    if mini_category_id is not None:
+        query = query.where(
+            Course.mini_category_id == mini_category_id
         )
 
     # Case-insensitive match on the course title, done by the database.
@@ -779,6 +939,20 @@ def update_course(
         course.subcategory_id,
     )
 
+    mini_category_id = update_data.get(
+        "mini_category_id",
+        course.mini_category_id,
+    )
+
+
+    # Clear the old mini-category if the subcategory changes.
+    if (
+        subcategory_id != course.subcategory_id
+        and "mini_category_id" not in update_data
+    ):
+        mini_category_id = None
+        update_data["mini_category_id"] = None
+
     # ---------------------------------------------------------
     # If brand is changed, determine whether the new brand
     # uses categories.
@@ -797,9 +971,11 @@ def update_course(
     if not has_categories:
         category_id = None
         subcategory_id = None
+        mini_category_id = None
 
         update_data["category_id"] = None
         update_data["subcategory_id"] = None
+        update_data["mini_category_id"] = None
 
     # Validate hierarchy for the selected brand
     validate_course_hierarchy(
@@ -807,6 +983,7 @@ def update_course(
         brand_id,
         category_id,
         subcategory_id,
+        mini_category_id,
     )
 
     # ---------------------------------------------------------

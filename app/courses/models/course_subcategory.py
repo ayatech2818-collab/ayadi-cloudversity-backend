@@ -12,6 +12,7 @@ from app.core.database import Base
 if TYPE_CHECKING:
     from app.courses.models.course_category import CourseCategory
     from app.courses.models.course import Course
+    from app.courses.models.course_mini_category import CourseMiniCategory
 
 
 class CourseSubcategory(Base):
@@ -69,6 +70,12 @@ class CourseSubcategory(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         nullable=False,
+    )
+
+    mini_categories: Mapped[list["CourseMiniCategory"]] = relationship(
+        "CourseMiniCategory",
+        back_populates="subcategory",
+        cascade="all, delete-orphan",
     )
 
     category: Mapped["CourseCategory"] = relationship(
