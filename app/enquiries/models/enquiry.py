@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, String, Text
+from sqlalchemy import Date, DateTime, String, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -71,6 +71,22 @@ class Enquiry(Base):
 
     message: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+
+    course_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "courses.id",
+            name="fk_enquiries_course_id_courses",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+
+    course_title: Mapped[str | None] = mapped_column(
+        String(255),
         nullable=True,
     )
 
