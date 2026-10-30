@@ -32,6 +32,9 @@ class EnquiryCreate(BaseModel):
 
     message: str | None = None
 
+    course_id: uuid.UUID | None = None
+    course_title: str | None = Field(default=None, max_length=255)
+
 
 class EnquiryUpdate(BaseModel):
     type: EnquiryType | None = None
@@ -65,6 +68,9 @@ class EnquiryUpdate(BaseModel):
 
     message: str | None = None
 
+    course_id: uuid.UUID | None = None
+    course_title: str | None = Field(default=None, max_length=255)
+
     status: EnquiryStatus | None = None
 
 
@@ -89,6 +95,9 @@ class EnquiryResponse(BaseModel):
     zipcode: str | None
 
     message: str | None
+
+    course_id: uuid.UUID | None
+    course_title: str | None
 
     status: EnquiryStatus
 
