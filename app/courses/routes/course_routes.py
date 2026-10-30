@@ -9,6 +9,7 @@ from fastapi import (
     UploadFile,
     Form,
     File,
+    HTTPException
 )
 from sqlalchemy.orm import Session
 
@@ -37,6 +38,12 @@ from app.courses.schemas.course_subcategory import (
     CourseSubcategoryUpdate,
 )
 from app.courses.services import course_service
+
+from app.courses.schemas.course_mini_category import (
+    CourseMiniCategoryCreate,
+    CourseMiniCategoryResponse,
+    CourseMiniCategoryUpdate,
+)
 
 
 router = APIRouter(
@@ -311,6 +318,84 @@ def delete_subcategory(
     )
 
 
+
+# =========================================================
+# Mini-categories
+# =========================================================
+
+@router.post(
+    "/mini-categories",
+    response_model=CourseMiniCategoryResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_mini_category(
+    data: CourseMiniCategoryCreate,
+    db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
+):
+    return course_service.create_mini_category(db, data)
+
+
+@router.get(
+    "/mini-categories",
+    response_model=list[CourseMiniCategoryResponse],
+)
+def get_mini_categories(
+    subcategory_id: UUID | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return course_service.get_mini_categories(
+        db,
+        subcategory_id,
+    )
+
+
+@router.get(
+    "/mini-categories/{mini_category_id}",
+    response_model=CourseMiniCategoryResponse,
+)
+def get_mini_category(
+    mini_category_id: UUID,
+    db: Session = Depends(get_db),
+):
+    return course_service.get_mini_category(
+        db,
+        mini_category_id,
+    )
+
+
+@router.put(
+    "/mini-categories/{mini_category_id}",
+    response_model=CourseMiniCategoryResponse,
+)
+def update_mini_category(
+    mini_category_id: UUID,
+    data: CourseMiniCategoryUpdate,
+    db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
+):
+    return course_service.update_mini_category(
+        db,
+        mini_category_id,
+        data,
+    )
+
+
+@router.delete(
+    "/mini-categories/{mini_category_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_mini_category(
+    mini_category_id: UUID,
+    db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
+):
+    course_service.delete_mini_category(
+        db,
+        mini_category_id,
+    )
+
+
 # =========================================================
 # Courses
 # =========================================================
@@ -324,6 +409,7 @@ def create_course(
     brand_id: UUID = Form(...),
     category_id: UUID = Form(...),
     subcategory_id: UUID = Form(...),
+    mini_category_id: str | None = Form(None),
     title: str = Form(...),
     slug: str = Form(...),
     course_code: str = Form(...),
@@ -337,10 +423,24 @@ def create_course(
     db: Session = Depends(get_db),
     admin: AdminProfile = Depends(get_current_admin),
 ):
+
+    try:
+        parsed_mini_category_id = (
+            UUID(mini_category_id)
+            if mini_category_id and mini_category_id.strip()
+            else None
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid mini_category_id",
+        )
+
     data = CourseCreate(
         brand_id=brand_id,
         category_id=category_id,
         subcategory_id=subcategory_id,
+        mini_category_id=parsed_mini_category_id,
         title=title,
         slug=slug,
         course_code=course_code,
@@ -367,6 +467,7 @@ def get_courses(
     brand_id: UUID | None = Query(default=None),
     category_id: UUID | None = Query(default=None),
     subcategory_id: UUID | None = Query(default=None),
+    mini_category_id: UUID | None = Query(default=None),
     search: str | None = Query(default=None),
     is_published: bool | None = Query(default=None),
     limit: int | None = Query(default=None, ge=1, le=50),
@@ -378,6 +479,7 @@ def get_courses(
         brand_id,
         category_id,
         subcategory_id,
+        mini_category_id,
         search,
         is_published,
         limit,
@@ -408,6 +510,7 @@ def update_course(
     brand_id: UUID | None = Form(None),
     category_id: UUID | None = Form(None),
     subcategory_id: UUID | None = Form(None),
+    mini_category_id: str = Form(""),
     title: str | None = Form(None),
     slug: str | None = Form(None),
     course_code: str | None = Form(None),
@@ -431,6 +534,21 @@ def update_course(
 
     if subcategory_id is not None:
         update_data["subcategory_id"] = subcategory_id
+
+    print("Received mini_category_id:", repr(mini_category_id))
+
+    if mini_category_id is not None:
+        try:
+            update_data["mini_category_id"] = (
+                UUID(mini_category_id)
+                if mini_category_id.strip()
+                else None
+            )
+        except ValueError:
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid mini_category_id"
+            )
 
     if title is not None:
         update_data["title"] = title

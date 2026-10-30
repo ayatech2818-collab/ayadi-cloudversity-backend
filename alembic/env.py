@@ -20,6 +20,7 @@ from app.courses.models import (
     CourseBrand,
     CourseCategory,
     CourseSubcategory,
+    CourseMiniCategory
 )
 
 config = context.config
