@@ -408,7 +408,7 @@ def delete_mini_category(
 def create_course(
     brand_id: UUID = Form(...),
     category_id: UUID = Form(...),
-    subcategory_id: UUID = Form(...),
+    subcategory_id: UUID | None = Form(None),
     mini_category_id: str | None = Form(None),
     title: str = Form(...),
     slug: str = Form(...),
