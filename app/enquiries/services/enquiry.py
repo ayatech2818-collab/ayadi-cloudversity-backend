@@ -1,6 +1,12 @@
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from io import BytesIO
+from datetime import date
+
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -88,6 +94,153 @@ def get_enquiries(
     result = db.scalars(query)
 
     return list(result.all())
+
+
+def export_enquiries(
+    db: Session,
+    status_filter: str | None = None,
+) -> BytesIO:
+
+    query = select(Enquiry)
+
+    # Filter by status when provided
+    if status_filter:
+        query = query.where(
+            Enquiry.status == status_filter
+        )
+
+    # Export oldest to newest
+    query = query.order_by(
+        Enquiry.created_at.asc()
+    )
+
+    enquiries = list(db.scalars(query).all())
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Enquiries"
+
+    headers = [
+        "Sl. No.",
+        "Submitted Date",
+        "Enquiry Type",
+        "Status",
+        "First Name",
+        "Last Name",
+        "Full Name",
+        "Email",
+        "Phone",
+        "DOB",
+        "City",
+        "Country",
+        "Zipcode",
+        "Address",
+        "Interested Course",
+        "Message",
+    ]
+
+    worksheet.append(headers)
+
+    # Header styling
+    for cell in worksheet[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(
+            start_color="15803D",
+            end_color="15803D",
+            fill_type="solid",
+        )
+        cell.alignment = Alignment(horizontal="center")
+
+    for index, enquiry in enumerate(enquiries, start=1):
+
+        message = enquiry.message or ""
+        course_title = enquiry.course_title or ""
+
+        # Extract legacy course information from message
+        if not course_title:
+            import re
+
+            match = re.match(
+                r"^Course:\s*(.*?)\s*\(ID:\s*[^)]+\)\s*\n?",
+                message,
+                re.IGNORECASE,
+            )
+
+            if match:
+                course_title = match.group(1).strip()
+                message = message[match.end():]
+
+        full_name = " ".join(
+            filter(
+                None,
+                [enquiry.first_name, enquiry.last_name],
+            )
+        )
+
+        row = [
+            index,
+            enquiry.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            if enquiry.created_at else "",
+            enquiry.type,
+            enquiry.status,
+            enquiry.first_name,
+            enquiry.last_name or "",
+            full_name,
+            enquiry.email,
+            enquiry.phone or "",
+            enquiry.date_of_birth.strftime("%Y-%m-%d")
+            if enquiry.date_of_birth else "",
+            enquiry.city or "",
+            enquiry.country or "",
+            enquiry.zipcode or "",
+            enquiry.address or "",
+            course_title,
+            message,
+        ]
+
+        # Prevent Excel formula injection.
+        safe_row = [
+            "'" + value
+            if isinstance(value, str)
+            and value.startswith(("=", "+", "-", "@"))
+            else value
+            for value in row
+        ]
+
+        worksheet.append(safe_row)
+
+    # Column widths
+    column_widths = {
+        "A": 10,
+        "B": 22,
+        "C": 16,
+        "D": 16,
+        "E": 18,
+        "F": 18,
+        "G": 25,
+        "H": 30,
+        "I": 18,
+        "J": 15,
+        "K": 18,
+        "L": 18,
+        "M": 14,
+        "N": 30,
+        "O": 30,
+        "P": 70,
+    }
+
+    for column, width in column_widths.items():
+        worksheet.column_dimensions[column].width = width
+
+    worksheet.freeze_panes = "A2"
+    worksheet.auto_filter.ref = worksheet.dimensions
+
+    # Return workbook in memory
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    return output
 
 
 def get_enquiry(
