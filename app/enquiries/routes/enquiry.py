@@ -4,6 +4,11 @@ from typing import Literal
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from datetime import datetime
+from io import BytesIO
+
+from fastapi.responses import StreamingResponse
+
 from app.auth.dependencies import get_current_admin
 from app.auth.models.admin_profile import AdminProfile
 from app.core.database import get_db
@@ -18,6 +23,7 @@ from app.enquiries.services.enquiry import (
     create_enquiry,
     delete_enquiry,
     get_enquiries,
+    export_enquiries, 
     get_enquiry,
     update_enquiry,
 )
@@ -74,6 +80,43 @@ def list_enquiries(
         sort_by=sort_by,
     )
 
+
+@router.get("/export")
+def export(
+    status: Literal[
+        "new",
+        "contacted",
+        "converted",
+        "closed",
+    ] | None = None,
+    db: Session = Depends(get_db),
+    admin: AdminProfile = Depends(get_current_admin),
+):
+    output = export_enquiries(
+        db=db,
+        status_filter=status,
+    )
+
+    status_name = status or "All"
+    date_suffix = datetime.now().strftime("%Y-%m-%d")
+
+    filename = (
+        f"Ayadi_{status_name.capitalize()}_Enquiries_"
+        f"{date_suffix}.xlsx"
+    )
+
+    return StreamingResponse(
+        output,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{filename}"'
+            )
+        },
+    )
 
 @router.get(
     "/{enquiry_id}",
