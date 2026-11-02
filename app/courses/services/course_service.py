@@ -695,11 +695,15 @@ def validate_course_hierarchy(
             detail="Category is required for this brand",
         )
 
+    # Subcategory is optional.
+    # If provided, validate its relationship with the category.
     if subcategory_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Subcategory is required for this brand",
-        )
+        if mini_category_id is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Mini-category requires a subcategory",
+            )
+        return
 
     category = get_category(db, category_id)
 
