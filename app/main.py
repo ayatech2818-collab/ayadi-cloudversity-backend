@@ -13,7 +13,7 @@ from app.courses.routes.course_routes import router as course_router
 from app.enquiries.routes.enquiry import router as enquiry_router
 from app.dashboard.routes import router as dashboard_router
 from app.feedback.routes.feedback import router as feedback_router
-
+from app.core.middleware import SecurityHeadersMiddleware
 from fastapi.openapi.utils import get_openapi
 
 
@@ -67,6 +67,7 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -74,7 +75,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         "https://ayadi-cloudversity-frontend.vercel.app",
-        "https://ayadicloudversity.com/",
+        "https://ayadicloudversity.com",
         "https://www.ayadicloudversity.com",
     ],
     allow_credentials=True,
